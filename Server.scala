@@ -19,7 +19,7 @@ object ChatServer {
 	 *
 	**/
 	class Server(port:Int) extends Runnable{
-		val pool = java.util.concurrent.Executors.newFixedThreadPool(10)
+		val pool = java.util.concurrent.Executors.newFixedThreadPool(20)
 		val serverSocket = new ServerSocket(port)
 		var uniqueId = 0;
 		var groups: List[Group]= List()
@@ -69,7 +69,7 @@ object ChatServer {
 			 * Receives messages over a given socket and handles responses.
 			**/
 			def run(){
-				//println("THREAD " + Thread.currentThread().getId()+": running")
+				println("THREAD " + Thread.currentThread().getId()+": running")
 				try {
 					while(!socket.isClosed()){
 						if(socket.getInputStream().available() > 0){
@@ -109,7 +109,7 @@ object ChatServer {
 					//println("thread " + Thread.currentThread().getId()+" closing")
 				}
 				catch {
-					case e: SocketException => println("SocketException: worker run failed")
+					case e: SocketException => println("THREAD " + Thread.currentThread().getId()+" SocketException: worker run function failed")
 				}
 			}
 		
@@ -119,26 +119,21 @@ object ChatServer {
 			 *
 			**/
 			def joinRoom(){
-				//println("THREAD " + Thread.currentThread().getId()+" JOINING")
 				//extract data from input
 				var lineData = message.dropWhile(_ != ':')
 			    var roomName = lineData.drop(1)
-				println("JOIN_CHATROOM: " + roomName)
 				
 				message = sIn.readLine()
 				lineData = message.dropWhile(_ != ':')
 				var joinIp = lineData.drop(1)
-				println("CLIENT_IP: " + joinIp)
 				
 				message = sIn.readLine()
 				lineData = message.dropWhile(_ != ':')
 				var joinPort = lineData.drop(1)
-				println("PORT: " + joinPort)
 				
 				message = sIn.readLine()
 				lineData = message.dropWhile(_ != ':')
 				var clientName = lineData.drop(1)
-				println("CLIENT_NAME: " + clientName)
 				
 				var roomRef = 0
 				var joinRef = 0
@@ -165,7 +160,6 @@ object ChatServer {
 				
 				tempGroup.addMember(tempClient)
 				println("SENDING....")
-				if(socket.isClosed) println("socket closed")
 				//Send join message to client
 				sOut.println("JOINED_CHATROOM: " + roomName
 								+ "\nSERVER_IP: " + IPaddress
@@ -184,7 +178,6 @@ object ChatServer {
 			}
 			
 			def leaveRoom(){
-				//println("THREAD " + Thread.currentThread().getId()+" LEAVING")
 				var lineData = message.dropWhile(_ != ':')
 			    var roomRef = lineData.drop(2)
 				
@@ -202,8 +195,6 @@ object ChatServer {
 				if(tempGroup == null){
 					println("LEAVE GROUP ERROR: group doesn't exist")
 				}
-				//block until any mesaages are sent
-				//while(tempGroup.transmission)
 				
 				//send response to client // might be delayed
 				sOut.println("LEFT_CHATROOM: " + roomRef
@@ -223,26 +214,21 @@ object ChatServer {
 			}
 			
 			def chat(){
-				println("THREAD " + Thread.currentThread().getId()+" CHAT")
 				//extract data from input
 				var lineData = message.dropWhile(_ != ':')
 			    var roomRef = lineData.drop(2)
-				println("CHAT: " + roomRef)
 				
 				message = sIn.readLine()
 				lineData = message.dropWhile(_ != ':')
 				var joinId = lineData.drop(2)
-				println("JOIN_ID: " + joinId)
 				
 				message = sIn.readLine()
 				lineData = message.dropWhile(_ != ':')
 				var clientName = lineData.drop(2)
-				println("CLIENT_NAME: " + clientName)
 				
 				message = sIn.readLine()
 				lineData = message.dropWhile(_ != ':')
 				var clientMsg = lineData.drop(2)
-				println("MESSAGE: " + clientMsg)
 				
 				//broadcast message to group
 				var tempGroup = getGroupR(roomRef.toInt)
@@ -274,10 +260,10 @@ object ChatServer {
 				var clientName = lineData.drop(1)
 				
 				var tempClient = getClient(clientName)
-				tempClient.socket.close
 				println(tempClient.handle + "(" + tempClient.joinRef + "): disconnected.") 
 				//remove from groups
-				for(g <- groups){
+				var tempGroups = groups.reverse
+				for(g <- tempGroups){
 					if(g.hasMember(tempClient.joinRef)){			
 						//notify group
 						var leftMsg = clientName + " has left this chatroom."
@@ -289,10 +275,12 @@ object ChatServer {
 									+ g.roomName + "(" + g.roomRef + ")")
 					} 
 				}
+				sOut.close
+				sIn.close
+				tempClient.socket.close
 			}
 			
 			def killService(){
-				//println("THREAD " + Thread.currentThread().getId()+": kill service invoked")
 				shutdown()
 				socket.close()
 			}

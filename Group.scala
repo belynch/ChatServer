@@ -7,7 +7,6 @@ class Group(name:String, id:Int) {
 	val roomName = name
 	val roomRef = id
 	var members: List[Client] = List()
-	var transmission = false;
 	
 	/**
 	 * Adds a user to the group members list
@@ -51,23 +50,12 @@ class Group(name:String, id:Int) {
 	 *
 	**/
 	def groupMessage(sender:Client, message:String){
-		transmission = true
 		for (m <- members) {
 			val sOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(m.socket.getOutputStream(), "UTF-8")))
-			println("THREAD " + Thread.currentThread().getId()+" ref: " + roomRef + " m: " + m.joinRef)
 			sOut.println("CHAT:" + roomRef
 							+ "\nCLIENT_NAME:" + sender.handle
 							+ "\nMESSAGE:" + message + "\n")
 			sOut.flush()
 		}
-		transmission = false
-	}
-	
-	def printGroup(): String ={
-		var result = "test\n"
-		for(m <- members){
-			result = result + "\n" + m.joinRef	
-		}
-		return result
 	}
 }
