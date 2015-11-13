@@ -57,7 +57,6 @@ object ChatServer {
 		class Worker(socket:Socket) extends Runnable {
 		
 			var sIn = new BufferedReader(new InputStreamReader(socket.getInputStream))
-			//var sOut = new PrintStream(socket.getOutputStream())
 			val sOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8")))
 			var message = ""
 			val IPaddress = socket.getLocalAddress().toString().drop(1)
