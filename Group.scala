@@ -1,5 +1,4 @@
-import java.io.{PrintStream, IOException}
-
+import java.io.{BufferedReader, InputStreamReader, PrintWriter, BufferedWriter, OutputStreamWriter}
 /**
  * A class used to represent chat rooms on the server
  *
@@ -23,7 +22,6 @@ class Group(name:String, id:Int) {
 	 *
 	**/
 	def removeMember(id:Int) {
-		members.filterNot(m => m.joinRef == id)
 		var updatedMembers: List[Client] = List()
 		for(m <- members){
 			if(m.joinRef != id){
@@ -55,12 +53,21 @@ class Group(name:String, id:Int) {
 	def groupMessage(sender:Client, message:String){
 		transmission = true
 		for (m <- members) {
-			var sOut = new PrintStream(m.socket.getOutputStream())
+			val sOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(m.socket.getOutputStream(), "UTF-8")))
+			println("THREAD " + Thread.currentThread().getId()+" ref: " + roomRef + " m: " + m.joinRef)
 			sOut.println("CHAT:" + roomRef
 							+ "\nCLIENT_NAME:" + sender.handle
 							+ "\nMESSAGE:" + message + "\n")
 			sOut.flush()
 		}
 		transmission = false
+	}
+	
+	def printGroup(): String ={
+		var result = "test\n"
+		for(m <- members){
+			result = result + "\n" + m.joinRef	
+		}
+		return result
 	}
 }

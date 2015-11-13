@@ -69,10 +69,11 @@ object ChatServer {
 			 * Receives messages over a given socket and handles responses.
 			**/
 			def run(){
-				println("THREAD " + Thread.currentThread().getId()+": running")
+				//println("THREAD " + Thread.currentThread().getId()+": running")
 				try {
 					while(!socket.isClosed()){
 						if(socket.getInputStream().available() > 0){
+							message = ""
 							message = sIn.readLine()
 							println("Received message: " + message)
 							//BASE 
@@ -105,7 +106,7 @@ object ChatServer {
 							}
 						}
 					}
-					println("thread " + Thread.currentThread().getId()+" closing")
+					//println("thread " + Thread.currentThread().getId()+" closing")
 				}
 				catch {
 					case e: SocketException => println("SocketException: worker run failed")
@@ -118,7 +119,7 @@ object ChatServer {
 			 *
 			**/
 			def joinRoom(){
-				println("THREAD " + Thread.currentThread().getId()+" JOINING")
+				//println("THREAD " + Thread.currentThread().getId()+" JOINING")
 				//extract data from input
 				var lineData = message.dropWhile(_ != ':')
 			    var roomName = lineData.drop(1)
@@ -163,24 +164,27 @@ object ChatServer {
 				var tempGroup = getGroup(roomName)
 				
 				tempGroup.addMember(tempClient)
-				
+				println("SENDING....")
+				if(socket.isClosed) println("socket closed")
 				//Send join message to client
 				sOut.println("JOINED_CHATROOM: " + roomName
 								+ "\nSERVER_IP: " + IPaddress
 								+ "\nPORT: " + port
 								+ "\nROOM_REF: " + roomRef
 								+ "\nJOIN_ID:" + joinRef)
+				println("SENT")
 				sOut.flush
 				//Send new member message to group
 				var joinMsg = tempClient.handle + " has joined this chatroom."
 				tempGroup.groupMessage(tempClient, joinMsg)
+				//print server message
 				println(tempClient.handle + "(" + tempClient.joinRef + "): joined " 
 						+ tempGroup.roomName + "(" + tempGroup.roomRef + ")")
 				println("")
 			}
 			
 			def leaveRoom(){
-				println("THREAD " + Thread.currentThread().getId()+" LEAVING")
+				//println("THREAD " + Thread.currentThread().getId()+" LEAVING")
 				var lineData = message.dropWhile(_ != ':')
 			    var roomRef = lineData.drop(2)
 				
@@ -194,16 +198,12 @@ object ChatServer {
 				
 				//if client in chat room - remove client
 				var tempGroup = getGroupR(roomRef.toInt)
+				println("length: " + tempGroup.members.length)
 				if(tempGroup == null){
 					println("LEAVE GROUP ERROR: group doesn't exist")
 				}
 				//block until any mesaages are sent
-				while(tempGroup.transmission)
-				
-				if(tempGroup.hasMember(joinId.toInt))
-				{
-					tempGroup.removeMember(joinId.toInt)
-				}
+				//while(tempGroup.transmission)
 				
 				//send response to client // might be delayed
 				sOut.println("LEFT_CHATROOM: " + roomRef
@@ -213,6 +213,10 @@ object ChatServer {
 				//send response to chatroom
 				var leftMsg = clientName + " has left this chatroom."
 				tempGroup.groupMessage(getClient(clientName), leftMsg)
+								
+				tempGroup.removeMember(joinId.toInt)
+
+				//print server message
 				println(clientName + "(" + joinId + "): left " 
 						+ tempGroup.roomName + "(" + tempGroup.roomRef + ")")
 				println("")
@@ -222,22 +226,22 @@ object ChatServer {
 				println("THREAD " + Thread.currentThread().getId()+" CHAT")
 				//extract data from input
 				var lineData = message.dropWhile(_ != ':')
-			    var roomRef = lineData.drop(1)
+			    var roomRef = lineData.drop(2)
 				println("CHAT: " + roomRef)
 				
 				message = sIn.readLine()
 				lineData = message.dropWhile(_ != ':')
-				var joinId = lineData.drop(1)
+				var joinId = lineData.drop(2)
 				println("JOIN_ID: " + joinId)
 				
 				message = sIn.readLine()
 				lineData = message.dropWhile(_ != ':')
-				var clientName = lineData.drop(1)
+				var clientName = lineData.drop(2)
 				println("CLIENT_NAME: " + clientName)
 				
 				message = sIn.readLine()
 				lineData = message.dropWhile(_ != ':')
-				var clientMsg = lineData.drop(1)
+				var clientMsg = lineData.drop(2)
 				println("MESSAGE: " + clientMsg)
 				
 				//broadcast message to group
@@ -274,8 +278,13 @@ object ChatServer {
 				println(tempClient.handle + "(" + tempClient.joinRef + "): disconnected.") 
 				//remove from groups
 				for(g <- groups){
-					if(g.hasMember(tempClient.joinRef)){
+					if(g.hasMember(tempClient.joinRef)){			
+						//notify group
+						var leftMsg = clientName + " has left this chatroom."
+						g.groupMessage(getClient(clientName), leftMsg)
+						//remove from group
 						g.removeMember(tempClient.joinRef)
+						//print server message
 						println(tempClient.handle + "(" + tempClient.joinRef + "): removed from " 
 									+ g.roomName + "(" + g.roomRef + ")")
 					} 
@@ -283,7 +292,7 @@ object ChatServer {
 			}
 			
 			def killService(){
-				println("THREAD " + Thread.currentThread().getId()+": kill service invoked")
+				//println("THREAD " + Thread.currentThread().getId()+": kill service invoked")
 				shutdown()
 				socket.close()
 			}

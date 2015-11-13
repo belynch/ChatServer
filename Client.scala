@@ -8,4 +8,5 @@ class Client(name:String, id:Int, clientSocket:Socket) {
 	val handle = name
 	val joinRef = id
 	var socket = clientSocket
+	var sOut = null
 }
