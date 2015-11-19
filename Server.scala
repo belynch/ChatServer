@@ -152,7 +152,9 @@ object ChatServer {
 					clients = new Client(clientName, joinRef, socket) :: clients
 				}
 				else{
-					joinRef = getClient(clientName).joinRef 
+					joinRef = getClient(clientName).joinRef
+					//need to overwrite their old socket with the new one
+					getClient(clientName).socket = socket
 				}
 				
 				var tempClient = getClient(clientName)

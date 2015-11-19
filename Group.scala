@@ -51,11 +51,11 @@ class Group(name:String, id:Int) {
 	**/
 	def groupMessage(sender:Client, message:String){
 		for (m <- members) {
-			val sOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(m.socket.getOutputStream(), "UTF-8")))
-			sOut.println("CHAT:" + roomRef
-							+ "\nCLIENT_NAME:" + sender.handle
-							+ "\nMESSAGE:" + message + "\n")
-			sOut.flush()
+				val sOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(m.socket.getOutputStream(), "UTF-8")))
+				sOut.println("CHAT:" + roomRef
+								+ "\nCLIENT_NAME:" + sender.handle
+								+ "\nMESSAGE:" + message + "\n")
+				sOut.flush()
 		}
 	}
 }
